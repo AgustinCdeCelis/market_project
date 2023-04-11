@@ -143,4 +143,4 @@ carrefour_main= pd.DataFrame({'links': data[0],'categories': data[1],'subcategor
 
 today = date.today() #hold the date
 d1 = today.strftime("%Y%m%d") 
-carrefour_main.to_csv(f'../csv/carrefour/{d1}carrefour_links.csv', encoding='utf-8', index=False) #always printing the date of the csv file
+carrefour_main.to_csv(f'./csv/carrefour/{d1}carrefour_links.csv', encoding='utf-8', index=False) #always printing the date of the csv file
