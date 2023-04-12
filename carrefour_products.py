@@ -99,8 +99,6 @@ def products(source,categories,subcategories): #product func that select product
         product_list.append(current_product)
     
     
-    
-    
     return product_list #check the answer
     
 
