@@ -77,4 +77,4 @@ data=full()
 
 today = date.today() #hold the date
 d1 = today.strftime("%Y%m%d") 
-data.to_csv(f'./csv/dia/{d1}carrefour_links.csv', encoding='utf-8', index=False) #always printing the date of the csv file
+data.to_csv(f'./csv/dia/{d1}dia_links.csv', encoding='utf-8', index=False) #always printing the date of the csv file
