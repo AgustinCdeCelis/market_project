@@ -18,7 +18,8 @@ from datetime import date
 #This funcs gives the section_urls
 
 def get_urls():
-    PATH = 'C:\Program Files (x86)\chromedriver.exe'
+    #PATH = 'C:\Program Files (x86)\chromedriver.exe'
+    PATH= '/usr/lib/chromium-browser/chromedriver' #chrome driver
 
     link = 'https://www.disco.com.ar/'
 
@@ -73,14 +74,16 @@ def get_urls():
 
     return links
 
+############################################
+
 #this funcs gives the func to analyze
 
 def urls_analyze(link):
 
     links=link
 
-    PATH = 'C:\Program Files (x86)\chromedriver.exe'
-
+    #PATH = 'C:\Program Files (x86)\chromedriver.exe'
+    PATH= '/usr/lib/chromium-browser/chromedriver' #driver
 
 
     s= Service(PATH)
@@ -135,9 +138,7 @@ def all_pages(link):
     elem= soup.find('div',{'class':'vtex-search-result-3-x-totalProducts--layout pv5 ph9 bn-ns bt-s b--muted-5 tc-s tl t-action--small'}).span.text
 #selecting the first value
     number=elem.split()[0]
-##########################################################################3   
- 
-#####################################################################################
+
     
     if int(number)%20 ==0:
         number_page=int(int(number)/20)
