@@ -1,7 +1,3 @@
-# %%
-#importing libraries
-#Web Scraping with selenium
-
 import selenium
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
