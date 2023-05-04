@@ -126,9 +126,13 @@ def products(link,category):
     
    #go down to see the whole page ----> the showmorebutton at the end
     go_down=driver.find_element(By.CSS_SELECTOR,'.vtex-search-result-3-x-buttonShowMore.vtex-search-result-3-x-buttonShowMore--fetch-more-hs.w-100.flex.justify-center')
-    time.sleep(3)
+    time.sleep(2)
     ActionChains(driver).move_to_element(go_down).perform()
-    time.sleep(5)
+    time.sleep(3)
+    #element with cout products to go up
+    go_up= driver.find_element(By.CSS_SELECTOR,'div.vtex-search-result-3-x-totalProducts--layout')
+    ActionChains(driver).move_to_element(go_up).perform()
+    time.sleep(3)
     html=driver.page_source
     time.sleep(5)
     soup=BeautifulSoup(html,'html.parser')
@@ -152,36 +156,29 @@ def products(link,category):
         description = prod.find('span',class_='vtex-product-summary-2-x-productBrand vtex-product-summary-2-x-brandName t-body').text
         print(description)
         
-        #promo=prod.find('div',class_= 'vtex-flex-layout-0-x-stretchChildrenWidth')
-        ##########
-        try:
-            block= prod.find('div',class_='vtex-flex-layout-0-x-flexRow vtex-flex-layout-0-x-flexRow--mainRow-price-box')
-            sub_block=block.find('div',class_='vtex-flex-layout-0-x-flexRow vtex-flex-layout-0-x-flexRow--sellingPrice-discount')
-            sub_sub_block = sub_block.find('span',class_='veaargentina-store-theme-1vId-Z5l1K6K82ho-1PHy6').text
-            print(block)
-            print(sub_block)
-            print(sub_sub_block)
-        except AttributeError:
-            print('no hay')
-
-
-
-
         #########################################
-        
         prod_img = prod.find('img').get('src')
         print(prod_img)
-        full_price = prod.find('div',class_='contenedor-precio').text
-        print(full_price)
-        if full_price.count('$')==2:
-            descuento=full_price.split('$',2)[1]
-            precio=full_price.split('$',2)[2]
-            current_product['precio'] = f'${precio}'
-            current_product['descuento']=f'${descuento}'
-        else:
-
+        #trying this to solve the error
+        try:
+            full_price = prod.find('div',class_='contenedor-precio').text
+            print(full_price)
+            
             current_product['precio'] = full_price
-            current_product['descuento'] = None
+                
+        except:
+            full_price = prod.find('div',class_="jumboargentinaio-store-theme-2HGAKpUDWMGu8a66aeeQ56").text
+            #print(full_price) #hay que dividir este código
+            if full_price.count('$')==2:
+                part=full_price.split('$',2)
+                print(f'precio: ${part[1]}')
+                #print(f'descuento: ${part[2]}')
+                current_product['precio'] = '$'+part[1]
+                subpart= part[2].split('-')
+                print(f'descuento {subpart[0]}')
+                print(f'descripcion promocion {subpart[1]}')
+                current_product['descuento'] = '$'+subpart[0]
+                current_product['descripcion_desc'] = subpart[1]
         print('#######################################################################################')
         try:
             current_product['brand'] = brand
@@ -234,14 +231,14 @@ def exception(links): #funcion que da el largo de subcategorias en casos con mas
     driver.maximize_window()
 
     driver.get(links)
-    time.sleep(16)
+    time.sleep(8)
 
     #cancel button
     try:
         driver.find_element(By.ID,'onesignal-slidedown-cancel-button').click()
     except:
         pass
-    time.sleep(3)
+    time.sleep(1)
 
     bar = driver.find_element(By.CSS_SELECTOR,'div.vtex-search-result-3-x-filterTemplateOverflow.pb5.overflow-y-auto')
     
@@ -254,31 +251,39 @@ def exception(links): #funcion que da el largo de subcategorias en casos con mas
         if i.text == 'Sub-Categoría':  #busco la subcategoria para que pueda clickear bien el item
                  
             driver.execute_script("arguments[0].scrollIntoView();", i)
+
+            
     time.sleep(2)
     
     go_down= driver.find_element(By.CSS_SELECTOR,'.vtex-search-result-3-x-buttonShowMore--layout') #voy abajo para que detecte bien el link
     ActionChains(driver).move_to_element(go_down).perform()
-    time.sleep(5)
-    #tag= driver.find_elements(By.CSS_SELECTOR,'button.vtex-search-result-3-x-seeMoreButton.mt2.pv2.bn.pointer.c-link')
+    time.sleep(3)
+    # #tag= driver.find_elements(By.CSS_SELECTOR,'button.vtex-search-result-3-x-seeMoreButton.mt2.pv2.bn.pointer.c-link')
     tag= driver.find_elements(By.CSS_SELECTOR,'.vtex-search-result-3-x-seeMoreButton.mt2.pv2.bn.pointer.c-link')
-    #print(f' la longitud de los tags {len(tag)}')
+    print(f' la longitud de los tags {len(tag)}')
 
+    if len(tag) !=1:
+        ActionChains(driver).move_to_element(tag[1]).click().perform() #el tag que hay que desplegar es el 2
+    else:
+        ActionChains(driver).move_to_element(tag[0]).click().perform()
+    time.sleep(1)
+
+    #ActionChains(driver).move_to_element(tag[1]).click().perform() #el tag que hay que desplegar es el 2
     
-    ActionChains(driver).move_to_element(tag[2]).click().perform() #el tag que hay que desplegar es el 2
     
-    
-    time.sleep(2)
+    time.sleep(1)
 
 
     sub=driver.find_elements(By.CSS_SELECTOR,'label[for*="category-3"]')
-    #print(f' cantidad de subcategorias: {len(sub)}')
+    
+
+    print(f' cantidad de subcategorias: {len(sub)}')
     #driver.close()
 
 
-    time.sleep(3)
+    time.sleep(2)
     
     
-    print(len(sub))
     return len(sub)
 
 
@@ -307,34 +312,34 @@ def products_except(link,category): #funcion que da la cantidad de productos
         description = prod.find('span',class_='vtex-product-summary-2-x-productBrand vtex-product-summary-2-x-brandName t-body').text
         #print(description)
         
-        #promo=prod.find('div',class_= 'vtex-flex-layout-0-x-stretchChildrenWidth')
-        ##########
-        # try:
-        #     block= prod.find('div',class_='vtex-flex-layout-0-x-flexRow vtex-flex-layout-0-x-flexRow--mainRow-price-box')
-        #     sub_block=block.find('div',class_='vtex-flex-layout-0-x-flexRow vtex-flex-layout-0-x-flexRow--sellingPrice-discount')
-        #     sub_sub_block = sub_block.find('span',class_='veaargentina-store-theme-1vId-Z5l1K6K82ho-1PHy6').text
-        #     #print(block)
-        #     #print(sub_block)
-        #     #print(sub_sub_block)
-        # except AttributeError:
-        #     #print('no hay')
-            
-
         #########################################
         
         prod_img = prod.find('img').get('src')
         #print(prod_img)
-        full_price = prod.find('div',class_='contenedor-precio').text
-        #print(full_price)
-        if full_price.count('$')==2:
-            descuento=full_price.split('$',2)[1]
-            precio=full_price.split('$',2)[2]
-            current_product['precio'] = f'${precio}'
-            current_product['descuento']=f'${descuento}'
-        else:
-
+        #trying this to solve the error
+        try:
+            full_price = prod.find('div',class_='contenedor-precio').text
+            print(full_price)
+            
             current_product['precio'] = full_price
-            current_product['descuento'] = None
+                
+        except:
+            full_price = prod.find('div',class_="jumboargentinaio-store-theme-2HGAKpUDWMGu8a66aeeQ56").text
+            #print(full_price) #hay que dividir este código
+            if full_price.count('$')==2:
+                part=full_price.split('$',2)
+                print(f'precio: ${part[1]}')
+                #print(f'descuento: ${part[2]}')
+                current_product['precio'] = '$'+part[1]
+                subpart= part[2].split('-')
+                print(f'descuento {subpart[0]}')
+                print(f'descripcion promocion {subpart[1]}')
+                current_product['descuento'] = '$'+subpart[0]
+                current_product['descripcion_desc'] = subpart[1]
+
+
+
+
         #print('#######################################################################################')
         
         current_product['brand'] = brand
@@ -376,14 +381,14 @@ def total(links,categoria): #funcion que da el total de categorias y productos
         driver.maximize_window()
 
         driver.get(links)
-        time.sleep(16)
+        time.sleep(8)
 
     #cancel button
         try:
             driver.find_element(By.ID,'onesignal-slidedown-cancel-button').click()
         except:
             pass
-        time.sleep(3)
+        time.sleep(1)
 
         bar = driver.find_element(By.CSS_SELECTOR,'div.vtex-search-result-3-x-filterTemplateOverflow.pb5.overflow-y-auto')
 
@@ -394,19 +399,27 @@ def total(links,categoria): #funcion que da el total de categorias y productos
             if i.text == 'Sub-Categoría':  #busco la subcategoria para que pueda clickear bien el item
                  
                 driver.execute_script("arguments[0].scrollIntoView();", i)
-            time.sleep(2)
+                
+                
+                
+        time.sleep(1)
 
         go_down= driver.find_element(By.CSS_SELECTOR,'.vtex-search-result-3-x-buttonShowMore--layout') #voy abajo para que detecte bien el link
         ActionChains(driver).move_to_element(go_down).perform() 
-        time.sleep(5)
+        time.sleep(1)
 
         #more button
-        tag= driver.find_elements(By.CSS_SELECTOR,'button.vtex-search-result-3-x-seeMoreButton.mt2.pv2.bn.pointer.c-link')[2]
+        tag= driver.find_elements(By.CSS_SELECTOR,'.vtex-search-result-3-x-seeMoreButton.mt2.pv2.bn.pointer.c-link')
+        print(len(tag))
+        if len(tag) !=1:
+            ActionChains(driver).move_to_element(tag[1]).click().perform() #el tag que hay que desplegar es el 2
+        else:
+            ActionChains(driver).move_to_element(tag[0]).click().perform()
+            time.sleep(1)
 
-        ActionChains(driver).move_to_element(tag).click().perform()
 
 
-        time.sleep(2)
+        time.sleep(1)
     
         #the subcategories elements
         sub=driver.find_elements(By.CSS_SELECTOR,'label[for*="category-3"]')
@@ -420,7 +433,7 @@ def total(links,categoria): #funcion que da el total de categorias y productos
         time.sleep(1)
         ActionChains(driver).move_to_element(sub[num_category]).perform()
         sub[num_category].click()
-        time.sleep(4)
+        time.sleep(2)
 
 
         cont+=1
@@ -428,7 +441,7 @@ def total(links,categoria): #funcion que da el total de categorias y productos
     
    
 
-        time.sleep(5)
+        time.sleep(3)
         loops=0
 
         while True:
@@ -452,7 +465,7 @@ def total(links,categoria): #funcion que da el total de categorias y productos
                 data2=products_except(driver.page_source,categoria) #saco los datos
                 data.extend(data2) 
            
-                time.sleep(7)
+                time.sleep(3)
         #
                 button=driver.find_element(By.CSS_SELECTOR,'.vtex-search-result-3-x-buttonShowMore.vtex-search-result-3-x-buttonShowMore--fetch-more-hs.w-100.flex.justify-center')
             
@@ -463,13 +476,15 @@ def total(links,categoria): #funcion que da el total de categorias y productos
                 break 
              
         driver.quit()
-        time.sleep(3)
+        time.sleep(1)
     
     df=pd.DataFrame(data)
     return df
 
 
 info= [total(i,u) for i,u in other]
+
+
 
 df =pd.concat(info)  #df with more than 1000 elements
 
