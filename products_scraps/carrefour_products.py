@@ -6,6 +6,7 @@ from selenium.webdriver import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException ,StaleElementReferenceException
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.chrome.options import Options
 #time
@@ -20,13 +21,14 @@ from datetime import date
 
 
 def products(source,categories,subcategories): #product func that select product data
-
+    print(categories)
+    print(subcategories)
 
     time.sleep(1)
-    section = BeautifulSoup(source)     #inition
+    section = BeautifulSoup(source,'html.parser')     #inition
 
-    products = section.find_all('div', attrs={'class': 'lyracons-search-result-1-x-galleryItem'})
-
+    #products = section.find_all('div', attrs={'class': 'lyracons-search-result-1-x-galleryItem'})
+    products = section.select('article.vtex-product-summary-2-x-element.vtex-product-summary-2-x-element--contentProduct')
     print(f' cantidad de pruductos: {len(products)}')
 
     count_product=0
@@ -105,16 +107,14 @@ def full_data(link,category,sub): #every page from url
 
     PATH= '/usr/lib/chromium-browser/chromedriver'
     s = Service(PATH)
-    chrome_options = Options()
-    chrome_options.add_argument('--headless')  # Habilitar el modo sin cabeza
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-dev-shm-usage')
     
-    driver = webdriver.Chrome(service=s,options=chrome_options)
+    
+    driver = webdriver.Chrome(service=s)
     driver.get(link)
     driver.maximize_window()
+    driver.execute_script("window.scrollTo(0, 10)")
 
-    time.sleep(14)
+    time.sleep(16)
 
     # accept cookies consent
     try:
@@ -122,56 +122,104 @@ def full_data(link,category,sub): #every page from url
         consent_button.click()
 
     except NoSuchElementException:
-        pass
-    
-    time.sleep(8)
+        time.sleep(4)  # Espera 4 segundos si no aparece, mismo proceso
 
+        try:
+            consent_button = driver.find_element(By.ID, 'onetrust-accept-btn-handler')
+            consent_button.click()
+
+        except NoSuchElementException:
+            pass
+
+    
+    time.sleep(6)
+    
+    try:
+        move_down = driver.find_element(By.CSS_SELECTOR,'.vtex-rich-text-0-x-wrapper.vtex-rich-text-0-x-wrapper--promoInfo')
+        ActionChains(driver).move_to_element(move_down).perform()
+    except:
+        pass
 
     css_selector_button = '.lyracons-search-result-1-x-paginationButtonChangePage.mr3.flex.justify-center'
     cambio_pagina = driver.find_elements(By.CSS_SELECTOR,css_selector_button)
 
+    time.sleep(8)
+    final_work=[] # list where i hold all the data       
 
+    try:
+        total=driver.find_element(By.CSS_SELECTOR,'.valtech-carrefourar-search-result-0-x-totalProducts--layout').text
+        print(total)
+        number = int(total.split()[0])
+      
+        if number==0: #primera condicion probabemente innecesaria
+        
+            print(f'{number} and {type(number)}')
+            return final_work
+        elif number%16==0:
+            number_pages= int(number/16) #hay un bug entre la hoja 1 y hoja 2 de productos que genera un error. 
+        else:
+            number_pages= int(number//16+1)
+
+        print(f'Total number of products: {number}')
+        print(f'Total number pages: {number_pages}')
+
+    except NoSuchElementException: #hay casos que no hay ningun elemento
+        print("Total products element not found.")
+        return final_work
+    ######
+    time.sleep(5)
+    
+    elements=driver.find_elements(By.CSS_SELECTOR,'article.vtex-product-summary-2-x-element.vtex-product-summary-2-x-element--contentProduct')
+    time.sleep(1)
     source=driver.page_source
     
     
-    final_work=[] # list where i hold all the data
-    final_work.extend(products(source,category,sub))
+    try:
+        print(f'page number: 1')
+        final_work.extend(products(source,category,sub))
+    except TimeoutException:
+        print('Error Loading or no element available')
+        return final_work
+    except Exception as e:
+        print(f'Error: {str(e)}')
+        return final_work
 
     try:
-        print(f'page number: {2}') 
-        button= driver.find_element(By.CSS_SELECTOR,'button[value="2"]')
-        time.sleep(2)
+        #time.sleep(4)
+        button = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, 'button[value="2"]')))
+    
+        print(f'page number: 2') 
+        #button= driver.find_element(By.CSS_SELECTOR,'button[value="2"]')
+        ActionChains(driver).move_to_element(button).perform()
+        time.sleep(8)
         button.click()
-        time.sleep(6)
+        time.sleep(8)
         source= driver.page_source
         final_work.extend(products(source, category, sub))
-    except:
-        pass
-
-
-    #prueba para saltear el bug
-    total= driver.find_element(By.CSS_SELECTOR,'.lyracons-search-result-1-x-totalProducts--layout').text
-
-    number = int(total.split()[0])         
+        time.sleep(1)
+    
+    except NoSuchElementException:
+        print('Error: Element not found')
+        return final_work
+    except Exception as e:
+        print(f'Error: {str(e)}')
+        return final_work
         
-    if number%16==0:
-        number_pages= int(number/16) #hay un bug entre la hoja 1 y hoja 2 de productos que genera un error. 
-    else:
-        number_pages= int(number//16+1)
 
-    print(f'Total number of products: {number}')
-    print(f'number pages: {number_pages}')
-    
-    
     if number_pages>2: #cambio el number_page por uno mayor, asi borro
 
         for i in range(3,number_pages+1):  #loop de paginas
             try:
-                print(f'page number: {i}') 
-                button= driver.find_element(By.CSS_SELECTOR,f'button[value="{i}"]')
-                time.sleep(2)
+                #time.sleep(4)
+                button = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, f'button[value="{i}"]')))
+                #button= driver.find_element(By.CSS_SELECTOR,f'button[value="{i}"]')
+                print(f'page number: {i}')
+                ActionChains(driver).move_to_element(button).perform()
+                time.sleep(8)
                 button.click()
-                time.sleep(6)
+                time.sleep(8)
                 source= driver.page_source
                 final_work.extend(products(source, category, sub)) #hold the data
                 time.sleep(2)
